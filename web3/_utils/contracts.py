@@ -162,10 +162,13 @@ def find_matching_fn_abi(
 
         raise ValidationError(message)
 
-
+encodeDict = {}
 def encode_abi(
     web3: "Web3", abi: ABIFunction, arguments: Sequence[Any], data: Optional[HexStr] = None
 ) -> HexStr:
+    key = str(abi) + "".join([str(a) for a in arguments]) + data
+    if key in encodeDict:
+        return encodeDict[key]
     argument_types = get_abi_input_types(abi)
 
     if not check_if_arguments_can_be_encoded(abi, web3.codec, arguments, {}):
@@ -193,10 +196,11 @@ def encode_abi(
     )
 
     if data:
-        return to_hex(HexBytes(data) + encoded_arguments)
+        result = to_hex(HexBytes(data) + encoded_arguments)
     else:
-        return encode_hex(encoded_arguments)
-
+        result = encode_hex(encoded_arguments)
+    encodeDict[key] = result
+    return result
 
 def prepare_transaction(
     address: ChecksumAddress,
